@@ -19,7 +19,6 @@ const loader = new Loader({
   version: "weekly",
   libraries: ['routes', 'places']
 });
-
 loader.load().then(async () => {
   const directionsRenderer = new google.maps.DirectionsRenderer();
   const directionsService = new google.maps.DirectionsService();
