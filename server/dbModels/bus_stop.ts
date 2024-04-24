@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 const schema = new mongoose.Schema(
   {
     name:  String,
-    AjTeDzax: Boolean,
     lat: Number,
     lng : Number,
     id : Number

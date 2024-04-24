@@ -1,6 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  build: { transpile: ["@fawmi/vue-google-maps"] },
+  build: { transpile: ["@googlemaps/js-api-loader"] },
   nitro: {
     plugins: ["~/server/plugins/mongodb.ts"],
   },
