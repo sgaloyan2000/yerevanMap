@@ -186,18 +186,17 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-// // Example usage:
   const bus_stop_manager = new BusStopManager();
   const bus_route_manager = new BusRouteManager();
   const travel_planner = new TravelPlanner(bus_stop_manager, bus_route_manager);
-//
-// // Add bus stops
+
+// Add bus stops
   const busStops = await bus_stop.find();
   busStops.forEach( (bs) => {
     bus_stop_manager.add_stop(<number>bs.id, <string>bs.name, <number>bs.lat, <number>bs.lng);
   });
 
-// // Add bus routes
+// Add bus routes
   const busRouts = await drive.find();
   busRouts.forEach( (rout) => {
     let bsm1: BusStop[] = [];
@@ -284,13 +283,8 @@ export default defineEventHandler(async (event) => {
           op_bus += optimal_buses[i][j] + ", "
         }
       }
-      // if (op_bus === "") {
-      //   bus_stops_.push(`Stop: ${optimal_route[i].name}, You reached to destination bus stop`)
-      //   console.log(`Stop: ${optimal_route[i].name}, You reached to destination bus stop`);
-      // } else {
       bus_stops_.push(`Stop: ${optimal_route[i].name}, Bus: ${op_bus}`)
       console.log(`Stop: ${optimal_route[i].name}, Bus: ${op_bus}`);
-      // }
     }
   }
 

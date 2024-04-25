@@ -96,9 +96,6 @@ export const useGraphDataStore = defineStore( 'graphDataStore', () => {
             // do something
         });
 
-
-
-
     return {
         rout,
         start_lat,
