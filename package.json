@@ -10,10 +10,13 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
-    "nuxt": "^3.11.2",
-    "vue": "^3.4.21",
-    "vue-router": "^4.3.0",
     "@googlemaps/js-api-loader": "^1.16.6",
-    "mongoose": "^8.3.1"
+    "@types/google.maps": "^3.55.7",
+    "mongoose": "^8.3.1",
+    "nuxt": "^3.11.2",
+    "@pinia/nuxt": "^0.5.1",
+    "pinia": "^2.1.7",
+    "vue": "^3.4.21",
+    "vue-router": "^4.3.0"
   }
 }

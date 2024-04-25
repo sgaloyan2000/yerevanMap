@@ -294,7 +294,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const ret =  {
+  return {
     start_lat: dr_start.lat,
     start_lng: dr_start.lng,
     start_name: dr_start.name,
@@ -304,6 +304,5 @@ export default defineEventHandler(async (event) => {
     end_name: dr_end.name,
     end_id: dr_end.id,
     busInfo: bus_stops_
-  };
-  return ret;
+  }
 })
