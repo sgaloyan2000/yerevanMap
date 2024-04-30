@@ -131,7 +131,6 @@ export default defineEventHandler(async (event) => {
               pq.sort((a, b) => a[0] - b[0]);
             }
           } catch (e) {
-            // console.log(e)
           }
         }
       }
