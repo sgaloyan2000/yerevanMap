@@ -21,11 +21,13 @@ export default defineEventHandler(async (event) => {
 
   class BusRoute {
     route_number: string;
-    stops: BusStop[];
+    forward_stops: BusStop[];
+    backward_stops: BusStop[];
 
-    constructor(route_number: string, stops: BusStop[]) {
+    constructor(route_number: string, forward_stops: BusStop[], backward_stops: BusStop[]) {
       this.route_number = route_number;
-      this.stops = stops;
+      this.forward_stops = forward_stops;
+      this.backward_stops = backward_stops;
     }
   }
 
@@ -36,14 +38,14 @@ export default defineEventHandler(async (event) => {
       this.routes = [];
     }
 
-    add_route(route_number: string, stops: BusStop[]) {
-      const route = new BusRoute(route_number, stops);
+    add_route(route_number: string, forward_stops: BusStop[], backward_stops: BusStop[]) {
+      const route = new BusRoute(route_number, forward_stops, backward_stops);
       this.routes.push(route);
     }
 
     find_stops_by_route(route_number: string): BusStop[] | null {
       const route = this.routes.find(route => route.route_number === route_number);
-      return route ? route.stops : null;
+      return route ? route.forward_stops : null;
     }
   }
 
@@ -165,24 +167,46 @@ export default defineEventHandler(async (event) => {
     get_neighbors(stop: BusStop): BusStop[] {
       const neighbors: BusStop[] = [];
       for (const route of this.bus_route_manager.routes) {
-        if (route.stops.includes(stop)) {
-          const index = route.stops.indexOf(stop);
-          if (index > 0) {
-            neighbors.push(route.stops[index - 1]);
+
+          if (route.backward_stops.includes(stop)) {
+            const index = route.backward_stops.indexOf(stop);
+            // if (index > 0) {
+            //   neighbors.push(route.backward_stops[index - 1]);
+            // }
+            if (index < route.backward_stops.length - 1) {
+              neighbors.push(route.backward_stops[index + 1]);
+            }
           }
-          if (index < route.stops.length - 1) {
-            neighbors.push(route.stops[index + 1]);
+
+          if (route.forward_stops.includes(stop)) {
+            const index = route.forward_stops.indexOf(stop);
+            // if (index > 0) {
+            //   neighbors.push(route.forward_stops[index - 1]);
+            // }
+            if (index < route.forward_stops.length - 1) {
+              neighbors.push(route.forward_stops[index + 1]);
+            }
           }
-        }
+
+
       }
       return neighbors;
     }
 
     find_buses_between_stops(stop1: BusStop, stop2: BusStop): string[] {
-      const buses: string[] = [];
+      const buses: any[] = [];
       for (const route of this.bus_route_manager.routes) {
-        if (route.stops.includes(stop1) && route.stops.includes(stop2)) {
-          buses.push(route.route_number);
+        if (route.forward_stops.includes(stop1) && route.forward_stops.includes(stop2)) {
+          buses.push({
+            "dir":  "forward",
+            "route_number": route.route_number
+          });
+        }
+        if (route.backward_stops.includes(stop1) && route.backward_stops.includes(stop2)) {
+          buses.push({
+            "dir":  "backward",
+            "route_number": route.route_number
+          });
         }
       }
       return buses;
@@ -207,11 +231,10 @@ export default defineEventHandler(async (event) => {
     rout.Dir1.forEach( (d1) => {
       bsm1.push(bus_stop_manager.stops[d1])
     })
-    bus_route_manager.add_route(<string>rout.Number+"_up", bsm1);
     rout.Dir2.forEach( (d2) => {
       bsm2.push(bus_stop_manager.stops[d2])
     })
-    bus_route_manager.add_route(<string>rout.Number+"_dn", bsm2);
+    bus_route_manager.add_route(<string>rout.Number, bsm1, bsm2);
   });
   console.log("##############################################################");
   console.log(`bus_stop_manager stop count: ${bus_stop_manager.stops.length}`);
@@ -276,23 +299,136 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const dr_start = await getNearestBusStop(start_lat, start_lng);
-  const dr_end = await getNearestBusStop(end_lat, end_lng);
+  async function getNearestBusStop1(lat_: any, lng_: any) {
+    try {
+      let distance_list: any = [];
+      busStopList.forEach( (kangar: any) =>{
+        distance_list.push({
+          id: kangar.id,
+          name: kangar.name,
+          lng: kangar.lng,
+          lat: kangar.lat,
+          distance: getDistance(lat_,lng_, kangar)});
+      });
 
-  const [optimal_buses, optimal_route] = travel_planner.find_optimal_route(dr_start, dr_end);
-  const bus_stops_ = [];
-  if (optimal_buses && optimal_route) {
-    for (let i = 0; i < optimal_route.length; i++) {
+      return await distance_list.sort(function(a: any, b: any){return a.distance-b.distance})[1];
+    } catch (err) {
+      console.dir(err);
+      event.node.res.statusCode = 500;
+      return {
+        code: "ERROR",
+        message: "Something went wrong.",
+      };
+    }
+  }
+
+  let dr_start_1 = await getNearestBusStop(start_lat, start_lng);
+  let dr_start_2 = await getNearestBusStop1(dr_start_1.lat, dr_start_1.lng);
+  let dr_end_1 = await getNearestBusStop(end_lat, end_lng);
+  let dr_end_2 = await getNearestBusStop1(dr_end_1.lat, dr_end_1.lng);
+
+  const [optimal_buses_1, optimal_route_1] = travel_planner.find_optimal_route(dr_start_1, dr_end_1);
+  const [optimal_buses_2, optimal_route_2] = travel_planner.find_optimal_route(dr_start_2, dr_end_1);
+  const [optimal_buses_3, optimal_route_3] = travel_planner.find_optimal_route(dr_start_1, dr_end_2);
+  const [optimal_buses_4, optimal_route_4] = travel_planner.find_optimal_route(dr_start_2, dr_end_2);
+  const bus_stops_4= [];
+  if (optimal_buses_4.length > 1 && optimal_route_4.length > 1 && optimal_buses_4 && optimal_route_4) {
+    for (let i = 0; i < optimal_route_4.length; i++) {
       let op_bus = "";
-      if (i < optimal_buses.length) {
-        let ob = optimal_buses[i];
+      if (i < optimal_buses_4.length) {
+        let ob = optimal_buses_4[i];
         for (let j = 0; j < ob.length; j++) {
-          op_bus += optimal_buses[i][j] + ", "
+          op_bus += optimal_buses_4[i][j].route_number + ", "
         }
       }
-      bus_stops_.push(`Stop: ${optimal_route[i].name}, Bus: ${op_bus}`)
-      console.log(`Stop: ${optimal_route[i].name}, Bus: ${op_bus}`);
+      bus_stops_4.push({
+        id: optimal_route_4[i].stop_id,
+        lat: optimal_route_4[i].latitude,
+        lng: optimal_route_4[i].longitude,
+        bus: op_bus
+      })
+      console.log(`Stop: ${optimal_route_4[i].stop_id}, Bus: ${op_bus}`);
     }
+  }
+  const bus_stops_3 = [];
+  if (optimal_buses_3.length > 1 && optimal_route_3.length > 1  && optimal_buses_3 && optimal_route_3) {
+    for (let i = 0; i < optimal_route_3.length; i++) {
+      let op_bus = "";
+      if (i < optimal_buses_3.length) {
+        let ob = optimal_buses_3[i];
+        for (let j = 0; j < ob.length; j++) {
+          op_bus += optimal_buses_3[i][j].route_number + ", "
+        }
+      }
+      bus_stops_3.push({
+        id: optimal_route_3[i].stop_id,
+        lat: optimal_route_3[i].latitude,
+        lng: optimal_route_3[i].longitude,
+        bus: op_bus
+      })
+      console.log(`Stop: ${optimal_route_3[i].stop_id}, Bus: ${op_bus}`);
+    }
+  }
+  const bus_stops_2 = [];
+  if (optimal_buses_2.length > 1 && optimal_route_2.length > 1  && optimal_route_2) {
+    for (let i = 0; i < optimal_route_2.length; i++) {
+      let op_bus = "";
+      if (i < optimal_buses_2.length) {
+        let ob = optimal_buses_2[i];
+        for (let j = 0; j < ob.length; j++) {
+          op_bus += optimal_buses_2[i][j].route_number + ", "
+        }
+      }
+      bus_stops_2.push({
+        id: optimal_route_2[i].stop_id,
+        lat: optimal_route_2[i].latitude,
+        lng: optimal_route_2[i].longitude,
+        bus: op_bus
+      })
+      console.log(`Stop: ${optimal_route_2[i].stop_id}, Bus: ${op_bus}`);
+    }
+  }
+  const bus_stops_1 = [];
+  if (optimal_buses_1.length > 1 && optimal_route_1.length > 1  && optimal_route_1) {
+    for (let i = 0; i < optimal_route_1.length; i++) {
+      let op_bus = "";
+      if (i < optimal_buses_1.length) {
+        let ob = optimal_buses_1[i];
+        for (let j = 0; j < ob.length; j++) {
+          op_bus += optimal_buses_1[i][j].route_number + ", "
+        }
+      }
+      bus_stops_1.push({
+        id: optimal_route_1[i].stop_id,
+        lat: optimal_route_1[i].latitude,
+        lng: optimal_route_1[i].longitude,
+        bus: op_bus
+      })
+      console.log(`Stop: ${optimal_route_1[i].stop_id}, Bus: ${op_bus}`);
+    }
+  }
+  let dr_start = dr_start_1;
+  let dr_end = dr_end_1;
+
+  let bus_stops_ = bus_stops_1;
+  bus_stops_ = bus_stops_1;
+  dr_start = dr_start_1;
+  dr_end = dr_end_1;
+
+  if(bus_stops_2.length < bus_stops_.length) {
+    bus_stops_ = bus_stops_2;
+    dr_start = dr_start_2;
+    dr_end = dr_end_1;
+  }
+  if(bus_stops_3.length < bus_stops_.length) {
+    bus_stops_ = bus_stops_3;
+    dr_start = dr_start_1;
+    dr_end = dr_end_2;
+  }
+  if(bus_stops_4.length < bus_stops_.length) {
+    bus_stops_ = bus_stops_4;
+    dr_start = dr_start_2;
+    dr_end = dr_end_2;
   }
 
   return {

@@ -3,30 +3,35 @@
     <div>
       <table>
         <tr>
-          <td>
-            <h4>Start Position</h4>
+          <td style="width: 70%;">
+            <div id="map" style="width: 100%; min-height: 500px;"></div>
           </td>
-          <td>
-            <h4>End Position</h4>
-          </td>
-          <td>
-            <h4>Rout</h4>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <h4>{{ graphDataStore.start_lat }}, {{ graphDataStore.start_lng }}</h4>
-          </td>
-          <td>
-            <h4>{{ graphDataStore.end_lat }}, {{ graphDataStore.end_lng }}</h4>
-          </td>
-          <td>
-            <h4>{{ graphDataStore.rout }}</h4>
+          <td style="width: 30%; ">
+            <table style="width: 100%;">
+              <tr style="width: 100%;">
+                <td><h4>Start Position</h4></td>
+                <td><h4>End Position</h4></td>
+              </tr>
+              <tr>
+                <td><h4>{{ graphDataStore.start_lat }}, {{ graphDataStore.start_lng }}</h4></td>
+                <td><h4>{{ graphDataStore.end_lat }}, {{ graphDataStore.end_lng }}</h4></td>
+              </tr>
+            </table>
+            <div style="max-height: 300px; overflow-y: scroll; margin-right: 20px;">
+            <table style="width: 100%; overflow-y: scroll; ">
+              <tr v-for="(data, index) in graphDataStore.rout" :key="index">
+                <td>
+                  <h4>Քայլ {{ index + 1 }}</h4>
+                  <p>Կանգառ N: {{ data.id }} Ավտոբուս N: {{ data.bus }}</p>
+                  <p></p>
+                </td>
+              </tr>
+            </table>
+            </div>
           </td>
         </tr>
       </table>
     </div>
-    <div id="map" style="width: 100%; height: 500px"></div>
   </div>
 
 </template>
@@ -40,15 +45,14 @@ const graphDataStore = useGraphDataStore();
 table{
   padding: 3px;
   margin: 10px;
-  width: 100%;
   border-style: solid;
   border-color: blue;
   }
-tr{
-  border: solid blueviolet;
+th, td {
+  vertical-align: top; /* Align content at the top of each cell */
 }
-td{
-  border: solid blue;
+th {
+  text-align: center;
 }
 h4{
   text-align: center;

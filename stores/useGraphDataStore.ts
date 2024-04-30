@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { Loader } from "@googlemaps/js-api-loader"
 
 export const useGraphDataStore = defineStore( 'graphDataStore', () => {
-    const rout =ref("Pick 2 points in map to know destination rout.")
+    const rout =ref(["Pick 2 points in map to know destination rout."])
     const start_lat = ref(0.0);
     const start_lng = ref(0.0);
     const end_lat = ref(0.0);
@@ -24,7 +24,7 @@ export const useGraphDataStore = defineStore( 'graphDataStore', () => {
             const directionsRenderer = new google.maps.DirectionsRenderer();
             const directionsRendererStart = new google.maps.DirectionsRenderer();
             const directionsRendererEnd = new google.maps.DirectionsRenderer();
-            const directionsRendererMiddle = new google.maps.DirectionsRenderer();
+            // const directionsRendererMiddle = new google.maps.DirectionsRenderer();
             const directionsService = new google.maps.DirectionsService();
 
             function renderDirectionsStart(result: any) {
@@ -35,7 +35,10 @@ export const useGraphDataStore = defineStore( 'graphDataStore', () => {
                 directionsRendererEnd.setMap(map);
                 directionsRendererEnd.setDirections(result);
             }
+            const directionsRendererMiddle_array: any[] = [];
             function renderDirectionsMiddle(result: any) {
+                const directionsRendererMiddle = new google.maps.DirectionsRenderer();
+                directionsRendererMiddle_array.push(directionsRendererMiddle)
                 directionsRendererMiddle.setMap(map);
                 directionsRendererMiddle.setDirections(result);
             }
@@ -43,7 +46,7 @@ export const useGraphDataStore = defineStore( 'graphDataStore', () => {
                 directionsService.route({
                     origin: start,
                     destination: end,
-                    travelMode: google.maps.TravelMode["WALKING"]
+                    travelMode: google.maps.TravelMode["TRANSIT"]
                 }, function(result: any) {
                     renderDirectionsStart(result);
                 });
@@ -52,13 +55,14 @@ export const useGraphDataStore = defineStore( 'graphDataStore', () => {
                 directionsService.route({
                     origin: start,
                     destination: end,
-                    travelMode: google.maps.TravelMode["WALKING"]
+                    travelMode: google.maps.TravelMode["TRANSIT"]
                 }, function(result: any) {
                     renderDirectionsEnd(result);
                 });
             }
             function requestDirectionsMiddle(start: any, end: any) {
-                directionsService.route({
+                const ds = new google.maps.DirectionsService()
+                ds.route({
                     origin: start,
                     destination: end,
                     travelMode: google.maps.TravelMode["DRIVING"]
@@ -71,6 +75,14 @@ export const useGraphDataStore = defineStore( 'graphDataStore', () => {
                 if (!end_catch_pos) {
                     start_lat.value = mapsMouseEvent.latLng.toJSON().lat;
                     start_lng.value = mapsMouseEvent.latLng.toJSON().lng;
+                    end_lat.value = 0;
+                    end_lng.value = 0;
+                    directionsRendererStart.setMap(null);
+                    directionsRendererEnd.setMap(null);
+                    directionsRendererMiddle_array.forEach(dr => {
+                        dr.setMap(null);
+                    })
+
                     end_catch_pos = true;
                 } else {
                     end_lat.value = mapsMouseEvent.latLng.toJSON().lat;
@@ -86,8 +98,25 @@ export const useGraphDataStore = defineStore( 'graphDataStore', () => {
                         }
                     });
                     requestDirectionsStart({ lat: start_lat.value, lng: start_lng.value }, { lat: dr.start_lat, lng: dr.start_lng });
+                    let st_lat = dr.start_lat;
+                    let st_lng = dr.start_lng;
+                    let en_lat = 0;
+                    let en_lng = 0;
+
+                    if (dr.busInfo.length > 0) {
+                        //alert(JSON.stringify(dr.busInfo));
+                        dr.busInfo.forEach(bi => {
+                            en_lat = bi.lat;
+                            en_lng = bi.lng;
+                            requestDirectionsMiddle({ lat: st_lat, lng: st_lng }, { lat: en_lat, lng: en_lng });
+                            st_lat = bi.lat;
+                            st_lng = bi.lng;
+                        })
+                    } else {
+                        requestDirectionsMiddle({ lat: dr.start_lat, lng: dr.start_lng }, { lat: dr.end_lat, lng: dr.end_lng });
+                    }
                     requestDirectionsEnd({ lat: dr.end_lat, lng: dr.end_lng }, { lat: end_lat.value, lng: end_lng.value });
-                    requestDirectionsMiddle({ lat: dr.start_lat, lng: dr.start_lng }, { lat: dr.end_lat, lng: dr.end_lng });
+
                     rout.value = dr.busInfo;
                 }
             });
