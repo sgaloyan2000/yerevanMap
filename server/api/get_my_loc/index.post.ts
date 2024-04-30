@@ -59,12 +59,12 @@ export default defineEventHandler(async (event) => {
       this.stops.push(stop);
     }
 
-    find_stop_by_id(stop_id: number): BusStop | null {
-      return this.stops.find(stop => stop.stop_id === stop_id) || null;
-    }
-
     find_stop_by_name(name: string): BusStop | null {
       return this.stops.find(stop => stop.name.toLowerCase() === name.toLowerCase()) || null;
+    }
+
+    find_stop_by_id(id: number): BusStop | null {
+      return this.stops.find(stop => stop.stop_id === id) || null;
     }
 
     get_all_stops(): BusStop[] {
@@ -98,36 +98,40 @@ export default defineEventHandler(async (event) => {
       this.bus_route_manager = bus_route_manager;
     }
 
-    find_optimal_route(start_stop_name: string, end_stop_name: string): [string[][], BusStop[]] | [null, null] {
-      const start_stop = this.bus_stop_manager.find_stop_by_name(start_stop_name);
-      const end_stop = this.bus_stop_manager.find_stop_by_name(end_stop_name);
+    find_optimal_route(start_stop_: any, end_stop_: any): [string[][], BusStop[]] | [null, null] {
+      const start_stop: BusStop | null = this.bus_stop_manager.find_stop_by_id(start_stop_.id);
+      const end_stop = this.bus_stop_manager.find_stop_by_id(end_stop_.id);
 
-      if (!start_stop || !end_stop) {
+      if ((start_stop!=null && !start_stop.stop_id) || (end_stop!=null && !end_stop.stop_id)) {
         return [null, null];
       }
 
       const distances: { [key: string]: number } = {};
-      distances[start_stop_name] = 0;
+      distances[start_stop.stop_id] = 0;
       const pq: [number, BusStop][] = [[0, start_stop]];
       const previous_stop: { [key: string]: BusStop | undefined } = {};
 
       while (pq.length) {
         const [current_distance, current_stop] = pq.shift()!;
-        if (current_stop === end_stop) {
+        if (current_stop.stop_id === end_stop.stop_id) {
           break;
         }
 
         const neighbors = this.get_neighbors(current_stop);
         for (const neighbor_stop of neighbors) {
-          const distance = current_distance + this.bus_stop_manager.calculate_distance(
-              current_stop.latitude, current_stop.longitude,
-              neighbor_stop.latitude, neighbor_stop.longitude
-          );
-          if (distance < (distances[neighbor_stop.name] || Infinity)) {
-            distances[neighbor_stop.name] = distance;
-            previous_stop[neighbor_stop.name] = current_stop;
-            pq.push([distance, neighbor_stop]);
-            pq.sort((a, b) => a[0] - b[0]);
+          try {
+            const distance = current_distance + this.bus_stop_manager.calculate_distance(
+                current_stop.latitude, current_stop.longitude,
+                neighbor_stop.latitude, neighbor_stop.longitude
+            );
+            if (distance < (distances[neighbor_stop.stop_id] || Infinity)) {
+              distances[neighbor_stop.stop_id] = distance;
+              previous_stop[neighbor_stop.stop_id] = current_stop;
+              pq.push([distance, neighbor_stop]);
+              pq.sort((a, b) => a[0] - b[0]);
+            }
+          } catch (e) {
+            // console.log(e)
           }
         }
       }
@@ -140,9 +144,9 @@ export default defineEventHandler(async (event) => {
           if (!current) break; // Break if current is undefined
 
           optimal_route.unshift(current);
-          current = previous_stop[current.name];
+          current = previous_stop[current.stop_id];
         }
-        if (current === start_stop) {
+        if (current === start_stop[0]) {
           optimal_route.unshift(current);
         }
       }
@@ -210,6 +214,10 @@ export default defineEventHandler(async (event) => {
     })
     bus_route_manager.add_route(<string>rout.Number+"_dn", bsm2);
   });
+  console.log("##############################################################");
+  console.log(`bus_stop_manager stop count: ${bus_stop_manager.stops.length}`);
+  console.log(`bus_stop_manager stop count: ${bus_route_manager.routes.length}`);
+  console.log("##############################################################");
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   const body = await readBody(event);
@@ -272,7 +280,7 @@ export default defineEventHandler(async (event) => {
   const dr_start = await getNearestBusStop(start_lat, start_lng);
   const dr_end = await getNearestBusStop(end_lat, end_lng);
 
-  const [optimal_buses, optimal_route] = travel_planner.find_optimal_route(dr_start.name, dr_end.name);
+  const [optimal_buses, optimal_route] = travel_planner.find_optimal_route(dr_start, dr_end);
   const bus_stops_ = [];
   if (optimal_buses && optimal_route) {
     for (let i = 0; i < optimal_route.length; i++) {
