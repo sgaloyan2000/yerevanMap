@@ -9,12 +9,12 @@
           <td style="width: 30%; ">
             <table style="width: 100%;">
               <tr style="width: 100%;">
-                <td><h4>Start Position</h4></td>
-                <td><h4>End Position</h4></td>
+                <td><h4>Սկզբնակետ</h4></td>
+                <td><h4>Վերջնակետ</h4></td>
               </tr>
               <tr>
-                <td><h4>{{ graphDataStore.start_lat }}, {{ graphDataStore.start_lng }}</h4></td>
-                <td><h4>{{ graphDataStore.end_lat }}, {{ graphDataStore.end_lng }}</h4></td>
+                <td><h4>{{ graphDataStore.start_name }}</h4></td>
+                <td><h4>{{ graphDataStore.end_name }}</h4></td>
               </tr>
             </table>
             <div style="max-height: 300px; overflow-y: scroll; margin-right: 20px;">

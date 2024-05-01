@@ -3,6 +3,8 @@ import { Loader } from "@googlemaps/js-api-loader"
 
 export const useGraphDataStore = defineStore( 'graphDataStore', () => {
     const rout =ref(["Pick 2 points in map to know destination rout."])
+    const start_name = ref("Start");
+    const end_name = ref("End");
     const start_lat = ref(0.0);
     const start_lng = ref(0.0);
     const end_lat = ref(0.0);
@@ -121,6 +123,8 @@ export const useGraphDataStore = defineStore( 'graphDataStore', () => {
                     requestDirectionsEnd({ lat: dr.end_lat, lng: dr.end_lng }, { lat: end_lat.value, lng: end_lng.value });
 
                     rout.value = dr.busInfo;
+                    start_name.value = dr.start_name;
+                    end_name.value = dr.end_name;
                 }
             });
         })
@@ -130,6 +134,8 @@ export const useGraphDataStore = defineStore( 'graphDataStore', () => {
 
     return {
         rout,
+        start_name,
+        end_name,
         start_lat,
         start_lng,
         end_lat,
