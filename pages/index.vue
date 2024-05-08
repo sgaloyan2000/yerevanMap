@@ -45,7 +45,7 @@
             <h4>{{ graphDataStore.end_name }}</h4>
           </div>
         </div>
-        <div style="max-height: 600px; overflow-y: auto">
+        <div style="max-height: 500px; overflow-y: auto">
           <div v-for="(data, index) in graphDataStore.rout" :key="index">
             <h4>Քայլ {{ index + 1 }}</h4>
             <p>Կանգառ N: {{ data.id }} Ավտոբուս N: {{ data.bus }}</p>
