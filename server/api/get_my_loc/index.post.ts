@@ -151,7 +151,6 @@ export default defineEventHandler(async (event) => {
           optimal_route.unshift(current);
         }
       }
-
       if (optimal_route.length === 1 && optimal_route[0] !== start_stop) {
         return [null, null];
       }
