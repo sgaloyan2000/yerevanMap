@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const newSchema = new mongoose.Schema(
   {
-    "Number": String,
+    "id": String,
     Dir1: [Number],
     Dir2: [Number]
   },
